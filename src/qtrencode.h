@@ -92,6 +92,8 @@ class QtRencode : public QObject {
   static void encode_none(char **buf, unsigned int *pos);
   static void encode_bool(char **buf, unsigned int *pos, bool x);
   static void encode_list(char **buf, unsigned int *pos, const QVariantList &x);
+  static void encode_dict(char **buf, unsigned int *pos, const QVariant &x);
+  static void encode_dict(char **buf, unsigned int *pos, const QVariantMap &x);
   static void encode_dict(char **buf, unsigned int *pos,
                           const QMap<QVariant, QVariant> &x);
   static void encode(char **buf, unsigned int *pos, const QVariant &data);

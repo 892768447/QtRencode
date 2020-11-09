@@ -272,9 +272,17 @@ void QtRencode::encode_list(char **buf, unsigned int *pos,
   }
 }
 
-void QtRencode::encode_dict(char **buf, unsigned int *pos,
-                            const QMap<QVariant, QVariant> &x) {
+void QtRencode::encode_dict(char **buf, unsigned int *pos, const QVariant &x) {
   qDebug() << "---encode_dict---" << &buf << pos[0] << x;
+  QMap<QVariant, QVariant> map1 = x.value<QMap<QVariant, QVariant>>();
+  if (map1.isEmpty())
+    encode_dict(buf, pos, x.toMap());
+  else
+    encode_dict(buf, pos, map1);
+}
+
+void QtRencode::encode_dict(char **buf, unsigned int *pos,
+                            const QVariantMap &x) {
   if (x.size() < DICT_FIXED_COUNT) {
     write_buffer_char(buf, pos, DICT_FIXED_START + x.size());
     for (auto it = x.begin(); it != x.end(); it++) {
@@ -291,12 +299,30 @@ void QtRencode::encode_dict(char **buf, unsigned int *pos,
   }
 }
 
+void QtRencode::encode_dict(char **buf, unsigned int *pos,
+                            const QMap<QVariant, QVariant> &data) {
+  if (data.size() < DICT_FIXED_COUNT) {
+    write_buffer_char(buf, pos, DICT_FIXED_START + data.size());
+    for (auto it = data.begin(); it != data.end(); it++) {
+      encode(buf, pos, it.key());
+      encode(buf, pos, it.value());
+    }
+  } else {
+    write_buffer_char(buf, pos, CHR_DICT);
+    for (auto it = data.begin(); it != data.end(); it++) {
+      encode(buf, pos, it.key());
+      encode(buf, pos, it.value());
+    }
+    write_buffer_char(buf, pos, CHR_TERM);
+  }
+}
+
 void QtRencode::encode(char **buf, unsigned int *pos, const QVariant &data) {
   if (data.type() == QVariant::List)
     encode_list(buf, pos, data.toList());
   else if (data.type() == QVariant::Map ||
            data.canConvert<QMap<QVariant, QVariant>>())
-    encode_dict(buf, pos, data.value<QMap<QVariant, QVariant>>());
+    encode_dict(buf, pos, data);
   else if (data.type() == QVariant::Bool)
     encode_bool(buf, pos, data.toBool());
   else if (data.type() == QVariant::String ||
